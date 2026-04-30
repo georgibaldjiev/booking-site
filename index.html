@@ -88,7 +88,104 @@
 <meta property="og:description" content="Психолог и психотерапевт в София. Работа с тревожност, свръхобмисляне (overthinking), ОКР, стрес и личностно развитие.">
 <meta property="og:type" content="website">
 </head>
+<script>
+let selectedDate = null;
+let selectedTime = null;
+let busySlots = [];
 
+// Генерира календар (следващите 14 дни)
+function generateCalendar() {
+  const calendar = document.getElementById("calendar");
+  calendar.innerHTML = "";
+
+  for (let i = 0; i < 14; i++) {
+    const d = new Date();
+    d.setDate(d.getDate() + i);
+
+    const el = document.createElement("div");
+    el.className = "day";
+    el.innerText = d.toLocaleDateString();
+
+    el.onclick = () => selectDate(d);
+
+    calendar.appendChild(el);
+  }
+}
+
+async function loadBusy() {
+  const res = await fetch("/.netlify/functions/calendar", {
+    method: "POST",
+    body: JSON.stringify({ action: "getBusy" })
+  });
+
+  busySlots = await res.json();
+}
+
+function selectDate(date) {
+  selectedDate = date;
+  showSlots();
+}
+
+function showSlots() {
+  const container = document.getElementById("slots");
+  container.innerHTML = "";
+
+  for (let h = 9; h <= 17; h++) {
+    const slotTime = new Date(selectedDate);
+    slotTime.setHours(h, 0, 0, 0);
+
+    const isBusy = busySlots.some(b => {
+      const start = new Date(b.start);
+      const end = new Date(b.end);
+      return slotTime >= start && slotTime < end;
+    });
+
+    const el = document.createElement("div");
+    el.className = "slot";
+    el.innerText = h + ":00";
+
+    if (isBusy) el.classList.add("busy");
+
+    el.onclick = () => selectSlot(slotTime, el);
+
+    container.appendChild(el);
+  }
+}
+
+function selectSlot(time, el) {
+  document.querySelectorAll(".slot").forEach(s => s.classList.remove("selected"));
+  el.classList.add("selected");
+
+  selectedTime = time;
+
+  document.getElementById("form").style.display = "block";
+}
+
+async function book() {
+  const name = document.getElementById("name").value;
+  const email = document.getElementById("email").value;
+  const type = document.getElementById("type").value;
+
+  await fetch("/.netlify/functions/calendar", {
+    method: "POST",
+    body: JSON.stringify({
+      action: "book",
+      name,
+      email,
+      type,
+      start: selectedTime.toISOString(),
+      end: new Date(selectedTime.getTime() + 60 * 60 * 1000).toISOString()
+    })
+  });
+
+  alert("Записано!");
+  location.reload();
+}
+
+// INIT
+generateCalendar();
+loadBusy();
+</script>
   <body>
     <div id="root"></div>
     <div id="booking">
