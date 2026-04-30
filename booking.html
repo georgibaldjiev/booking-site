@@ -55,9 +55,11 @@ let selectedSlot = null;
 
 async function loadSlots() {
   const res = await fetch("/.netlify/functions/calendar", {
-    method: "POST",
-    body: JSON.stringify({ action: "getBusy" })
-  });
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({
 
   const busy = await res.json();
 
