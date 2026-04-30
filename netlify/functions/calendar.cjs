@@ -1,4 +1,4 @@
-import { google } from "googleapis";
+const { google } = require("googleapis");
 
 exports.handler = async (event) => {
   try {
@@ -10,7 +10,6 @@ exports.handler = async (event) => {
     });
 
     const calendar = google.calendar({ version: "v3", auth });
-
     const calendarId = process.env.CALENDAR_ID;
 
     const body = JSON.parse(event.body || "{}");
@@ -31,7 +30,7 @@ exports.handler = async (event) => {
         orderBy: "startTime",
       });
 
-      const busy = res.data.items.map(e => ({
+      const busy = res.data.items.map((e) => ({
         start: e.start.dateTime,
         end: e.end.dateTime,
       }));
@@ -59,7 +58,6 @@ exports.handler = async (event) => {
         attendees: [{ email }],
       };
 
-      // онлайн → добавяме Google Meet
       if (type === "online") {
         eventData.conferenceData = {
           createRequest: {
@@ -69,7 +67,6 @@ exports.handler = async (event) => {
         };
       }
 
-      // присъствено → адрес
       if (type === "offline") {
         eventData.location = "София (адрес по избор)";
       }
@@ -98,19 +95,3 @@ exports.handler = async (event) => {
     };
   }
 };
-if (body.action === "book") {
-  await calendar.events.insert({
-    calendarId,
-    resource: {
-      summary: `${body.name} (${body.type})`,
-      description: body.email,
-      start: { dateTime: body.start },
-      end: { dateTime: body.end }
-    }
-  });
-
-  return {
-    statusCode: 200,
-    body: JSON.stringify({ success: true })
-  };
-}
