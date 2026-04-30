@@ -98,3 +98,19 @@ exports.handler = async (event) => {
     };
   }
 };
+if (body.action === "book") {
+  await calendar.events.insert({
+    calendarId,
+    resource: {
+      summary: `${body.name} (${body.type})`,
+      description: body.email,
+      start: { dateTime: body.start },
+      end: { dateTime: body.end }
+    }
+  });
+
+  return {
+    statusCode: 200,
+    body: JSON.stringify({ success: true })
+  };
+}
