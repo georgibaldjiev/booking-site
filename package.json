@@ -5,3 +5,6 @@
     "googleapis": "^126.0.1"
   }
 }
+{
+  "type": "module"
+}
