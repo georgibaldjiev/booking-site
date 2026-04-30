@@ -91,5 +91,25 @@
 
   <body>
     <div id="root"></div>
+    <div id="booking">
+  <h2>Запази час</h2>
+
+  <div id="calendar"></div>
+
+  <div id="slots"></div>
+
+  <div id="form" style="display:none;">
+    <h3>Резервация</h3>
+    <input type="text" id="name" placeholder="Име"><br>
+    <input type="email" id="email" placeholder="Имейл"><br>
+
+    <select id="type">
+      <option value="online">Онлайн</option>
+      <option value="offline">На място</option>
+    </select><br>
+
+    <button onclick="book()">Запази</button>
+  </div>
+</div>
   </body>
 </html>
