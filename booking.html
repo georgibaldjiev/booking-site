@@ -125,7 +125,16 @@ async function book() {
 
   const data = await res.json();
 
-  alert("Часът е запазен!");
+  const data = await res.json();
+
+console.log("RESPONSE:", data);
+
+if (!res.ok) {
+  alert("Грешка: " + JSON.stringify(data));
+  return;
+}
+
+alert("Часът е запазен!");
   loadSlots();
 }
 
