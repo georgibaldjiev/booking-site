@@ -1,3 +1,4 @@
+console.log("BODY:", event.body);
 const { google } = require("googleapis");
 
 exports.handler = async (event) => {
