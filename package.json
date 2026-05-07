@@ -1,8 +1,1 @@
-{
-  "name": "booking-site",
-  "version": "1.0.0",
-  "type": "module",
-  "dependencies": {
-    "googleapis": "^137.0.0"
-  }
-}
+
