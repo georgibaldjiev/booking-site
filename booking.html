@@ -1,104 +1,59 @@
-<!DOCTYPE html>
-<html lang="bg">
-<head>
-  <meta charset="UTF-8">
-  <title>Запази час</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <style>
-    body {
-      font-family: Arial;
-      max-width: 600px;
-      margin: 40px auto;
-      padding: 20px;
-    }
-
-    input, select, button {
-      width: 100%;
-      padding: 10px;
-      margin: 8px 0;
-      font-size: 16px;
-    }
-
-    #slots button {
-      margin: 5px 0;
-      background: #f3f3f3;
-      border: 1px solid #ccc;
-      cursor: pointer;
-    }
-
-    #slots button.selected {
-      background: lightgreen;
-    }
-  </style>
-</head>
-
-<body>
-
-<h2>Запази консултация</h2>
-
-<select id="type">
-  <option value="online">Онлайн (Google Meet)</option>
-  <option value="offline">На място</option>
-</select>
-
-<input id="name" placeholder="Име">
-<input id="email" placeholder="Email">
-
-<h3>Свободни часове:</h3>
-<div id="slots">Зареждане...</div>
-
-<button onclick="book()">Запази</button>
-
 <script>
 let selectedSlot = null;
 
 async function loadSlots() {
-  const res = await fetch("/.netlify/functions/calendar", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json"
-  },
-  body: JSON.stringify({
+  try {
+    const res = await fetch("/.netlify/functions/calendar", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        action: "getBusy"
+      })
+    });
 
-  const busy = await res.json();
+    const busy = await res.json();
 
-  const container = document.getElementById("slots");
-  container.innerHTML = "";
+    console.log("BUSY:", busy);
 
-  const now = new Date();
+    const container = document.getElementById("slots");
+    container.innerHTML = "";
 
-  for (let d = 0; d < 7; d++) {
-    for (let h = 9; h <= 17; h++) {
+    const now = new Date();
 
-      let slot = new Date();
-      slot.setDate(now.getDate() + d);
-      slot.setHours(h, 0, 0, 0);
+    for (let d = 0; d < 7; d++) {
+      for (let h = 9; h <= 17; h++) {
 
-      let iso = slot.toISOString();
+        let slot = new Date();
+        slot.setDate(now.getDate() + d);
+        slot.setHours(h, 0, 0, 0);
 
-      // проверка дали е зает
-      let isBusy = busy.some(b => {
-        return b.start === iso;
-      });
+        let iso = slot.toISOString();
 
-      if (!isBusy) {
-        let btn = document.createElement("button");
+        let isBusy = busy.some(b => b.start === iso);
 
-        btn.innerText = slot.toLocaleString("bg-BG");
+        if (!isBusy) {
+          let btn = document.createElement("button");
 
-        btn.onclick = () => {
-          selectedSlot = iso;
+          btn.innerText = slot.toLocaleString("bg-BG");
 
-          document.querySelectorAll("#slots button")
-            .forEach(b => b.classList.remove("selected"));
+          btn.onclick = () => {
+            selectedSlot = iso;
 
-          btn.classList.add("selected");
-        };
+            document.querySelectorAll("#slots button")
+              .forEach(b => b.classList.remove("selected"));
 
-        container.appendChild(btn);
+            btn.classList.add("selected");
+          };
+
+          container.appendChild(btn);
+        }
       }
     }
+
+  } catch (err) {
+    console.error("LOAD ERROR:", err);
   }
 }
 
@@ -114,6 +69,9 @@ async function book() {
 
   const res = await fetch("/.netlify/functions/calendar", {
     method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
     body: JSON.stringify({
       action: "create",
       name,
@@ -125,21 +83,16 @@ async function book() {
 
   const data = await res.json();
 
-  const data = await res.json();
+  console.log("RESPONSE:", data);
 
-console.log("RESPONSE:", data);
+  if (!res.ok) {
+    alert("Грешка: " + JSON.stringify(data));
+    return;
+  }
 
-if (!res.ok) {
-  alert("Грешка: " + JSON.stringify(data));
-  return;
-}
-
-alert("Часът е запазен!");
+  alert("Часът е запазен!");
   loadSlots();
 }
 
 loadSlots();
 </script>
-
-</body>
-</html>
