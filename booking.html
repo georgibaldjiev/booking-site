@@ -1,9 +1,31 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+  <meta charset="UTF-8">
+  <title>Запази час</title>
+</head>
+
+<body>
+
+<h2>Запази консултация</h2>
+
+<select id="type">
+  <option value="online">Онлайн</option>
+  <option value="offline">На място</option>
+</select>
+
+<input id="name" placeholder="Име">
+<input id="email" placeholder="Email">
+
+<h3>Свободни часове:</h3>
+<div id="slots">Зареждане...</div>
+
+<button onclick="book()">Запази</button>
+
 <script>
-console.log("SCRIPT STARTED");
+let selectedSlot = null;
 
 async function loadSlots() {
-  console.log("LOAD SLOTS RUN");
-
   const res = await fetch("/.netlify/functions/calendar", {
     method: "POST",
     headers: {
@@ -13,10 +35,80 @@ async function loadSlots() {
   });
 
   const busy = await res.json();
-  console.log("BUSY:", busy);
 
-  document.getElementById("slots").innerHTML = "OK";
+  const container = document.getElementById("slots");
+  container.innerHTML = "";
+
+  const now = new Date();
+
+  for (let d = 0; d < 7; d++) {
+    for (let h = 9; h <= 17; h++) {
+
+      let slot = new Date();
+      slot.setDate(now.getDate() + d);
+      slot.setHours(h, 0, 0, 0);
+
+      let iso = slot.toISOString();
+
+      let isBusy = busy.some(b => b.start === iso);
+
+      if (!isBusy) {
+        let btn = document.createElement("button");
+
+        btn.innerText = slot.toLocaleString("bg-BG");
+
+        btn.onclick = () => {
+          selectedSlot = iso;
+
+          document.querySelectorAll("#slots button")
+            .forEach(b => b.classList.remove("selected"));
+
+          btn.classList.add("selected");
+        };
+
+        container.appendChild(btn);
+      }
+    }
+  }
+}
+
+async function book() {
+  if (!selectedSlot) {
+    alert("Избери час");
+    return;
+  }
+
+  const name = document.getElementById("name").value;
+  const email = document.getElementById("email").value;
+  const type = document.getElementById("type").value;
+
+  const res = await fetch("/.netlify/functions/calendar", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      action: "create",
+      name,
+      email,
+      slot: selectedSlot,
+      type
+    })
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    alert("Грешка: " + JSON.stringify(data));
+    return;
+  }
+
+  alert("Часът е запазен!");
+  loadSlots();
 }
 
 loadSlots();
 </script>
+
+</body>
+</html>
