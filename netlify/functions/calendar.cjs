@@ -1,101 +1,42 @@
-const { google } = require("googleapis");
-
 exports.handler = async (event) => {
   try {
-    const credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS);
-
-    const auth = new google.auth.GoogleAuth({
-      credentials: credentials,
-      scopes: ["https://www.googleapis.com/auth/calendar"],
-    });
-
-    const calendar = google.calendar({ version: "v3", auth });
-
-    const calendarId = process.env.CALENDAR_ID;
-
     const body = JSON.parse(event.body || "{}");
 
+    const calendarId = process.env.CALENDAR_ID;
+    const apiKey = process.env.GOOGLE_API_KEY;
+
     // =========================
-    // 1. ВЗИМАМЕ ЗАЕТИТЕ ЧАСОВЕ
+    // GET BUSY (четене)
     // =========================
     if (body.action === "getBusy") {
-      const now = new Date();
-      const future = new Date();
-      future.setDate(now.getDate() + 14);
+      const now = new Date().toISOString();
+      const future = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
 
-      const res = await calendar.events.list({
-        calendarId: calendarId,
-        timeMin: now.toISOString(),
-        timeMax: future.toISOString(),
-        singleEvents: true,
-        orderBy: "startTime",
-      });
+      const url = `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events?key=${apiKey}&timeMin=${now}&timeMax=${future}&singleEvents=true&orderBy=startTime`;
 
-      const busy = res.data.items.map((e) => ({
+      const res = await fetch(url);
+      const data = await res.json();
+
+      const busy = (data.items || []).map(e => ({
         start: e.start.dateTime,
-        end: e.end.dateTime,
+        end: e.end.dateTime
       }));
 
       return {
         statusCode: 200,
-        body: JSON.stringify(busy),
-      };
-    }
-
-    // =========================
-    // 2. СЪЗДАВАНЕ НА СРЕЩА
-    // =========================
-    if (body.action === "create") {
-      const name = body.name;
-      const email = body.email;
-      const slot = body.slot;
-      const type = body.type;
-
-      const start = new Date(slot);
-      const end = new Date(start.getTime() + 60 * 60 * 1000);
-
-      let eventData = {
-        summary: `Консултация – ${name}`,
-        description: `Тип: ${type}\nEmail: ${email}`,
-        start: { dateTime: start.toISOString() },
-        end: { dateTime: end.toISOString() },
-        attendees: [{ email: email }],
-      };
-
-      if (type === "online") {
-        eventData.conferenceData = {
-          createRequest: {
-            requestId: Math.random().toString(36),
-            conferenceSolutionKey: { type: "hangoutsMeet" },
-          },
-        };
-      }
-
-      if (type === "offline") {
-        eventData.location = "София";
-      }
-
-      const res = await calendar.events.insert({
-        calendarId: calendarId,
-        resource: eventData,
-        conferenceDataVersion: 1,
-      });
-
-      return {
-        statusCode: 200,
-        body: JSON.stringify(res.data),
+        body: JSON.stringify(busy)
       };
     }
 
     return {
       statusCode: 400,
-      body: "Invalid request",
+      body: "Invalid request"
     };
 
   } catch (err) {
     return {
       statusCode: 500,
-      body: err.toString(),
+      body: err.toString()
     };
   }
 };
