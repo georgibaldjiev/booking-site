@@ -1,97 +1,21 @@
 <script>
-let selectedSlot = null;
+console.log("SCRIPT STARTED");
 
 async function loadSlots() {
-  try {
-    const res = await fetch("/.netlify/functions/calendar", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        action: "getBusy"
-      })
-    });
-
-    const busy = await res.json();
-
-    console.log("BUSY:", busy);
-
-    const container = document.getElementById("slots");
-    container.innerHTML = "";
-
-    const now = new Date();
-
-    for (let d = 0; d < 7; d++) {
-      for (let h = 9; h <= 17; h++) {
-
-        let slot = new Date();
-        slot.setDate(now.getDate() + d);
-        slot.setHours(h, 0, 0, 0);
-
-        let iso = slot.toISOString();
-
-        let isBusy = busy.some(b => b.start === iso);
-
-        if (!isBusy) {
-          let btn = document.createElement("button");
-
-          btn.innerText = slot.toLocaleString("bg-BG");
-
-          btn.onclick = () => {
-            selectedSlot = iso;
-
-            document.querySelectorAll("#slots button")
-              .forEach(b => b.classList.remove("selected"));
-
-            btn.classList.add("selected");
-          };
-
-          container.appendChild(btn);
-        }
-      }
-    }
-
-  } catch (err) {
-    console.error("LOAD ERROR:", err);
-  }
-}
-
-async function book() {
-  if (!selectedSlot) {
-    alert("Избери час");
-    return;
-  }
-
-  const name = document.getElementById("name").value;
-  const email = document.getElementById("email").value;
-  const type = document.getElementById("type").value;
+  console.log("LOAD SLOTS RUN");
 
   const res = await fetch("/.netlify/functions/calendar", {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
     },
-    body: JSON.stringify({
-      action: "create",
-      name,
-      email,
-      slot: selectedSlot,
-      type
-    })
+    body: JSON.stringify({ action: "getBusy" })
   });
 
-  const data = await res.json();
+  const busy = await res.json();
+  console.log("BUSY:", busy);
 
-  console.log("RESPONSE:", data);
-
-  if (!res.ok) {
-    alert("Грешка: " + JSON.stringify(data));
-    return;
-  }
-
-  alert("Часът е запазен!");
-  loadSlots();
+  document.getElementById("slots").innerHTML = "OK";
 }
 
 loadSlots();
